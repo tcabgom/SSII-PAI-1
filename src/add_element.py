@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import exam
 from tkinter import filedialog, messagebox
 
 base_paths = "base_paths.json"
@@ -11,7 +12,7 @@ def load_base_paths():
         pass
     pass
 
-def add_new_file():
+def add_new_dir():
     '''
     Añade un nuevo directorio a la lista de archivos a verificar
     '''
@@ -23,6 +24,40 @@ def add_new_file():
             messagebox.showerror("Error", "El directorio seleccionado ya se encuentra en la lista")
             return
         add_rel_path(directory_path, id)
+
+def add_new_file():
+    file_path = filedialog.askopenfilename(title="Seleccionar archivo para verificar integridad")
+    if file_path:
+        duplicated = add_filepath(file_path)
+        if duplicated:
+            messagebox.showerror("Error", "El archivo seleccionado ya se encuentra en la lista")
+            return
+        
+def add_filepath(file_path):
+    base, rel = split_string_in_half(file_path) 
+    id, duplicated = add_base_path(base)
+    if duplicated:
+        return duplicated
+    if os.path.exists(rel_paths):
+        with open(rel_paths, 'r', encoding='utf-8') as file:
+            rel_paths_dict = json.load(file)
+    else:
+        rel_paths_dict = {}  
+    rel_paths_dict[id] = [rel]
+    print(rel)
+    
+    with open(rel_paths, 'w', encoding='utf-8') as f:
+        json.dump(rel_paths_dict, f)
+
+
+def split_string_in_half(input_string):
+    length = len(input_string)
+    middle = length // 2
+
+    first_half = input_string[:middle]
+    second_half = input_string[middle:]
+
+    return first_half, second_half
 
 def add_base_path(directory_path):
     id = 0
@@ -71,19 +106,20 @@ def obtain_path_files(path, id, base_path, visited_directories=None):
 
     for file in glob.glob(path, recursive=True):
         if os.path.isfile(file):
-            files.add(parse_file_path(file, id, base_path))
+            files.add(get_relpath(file, base_path))
         elif os.path.isdir(file) and file not in visited_directories:
             visited_directories.add(file)
             files.update(obtain_path_files(file, id, base_path, visited_directories))
 
     return files
 
-def parse_file_path(file, id, base_path):
+def get_relpath(file, base_path):
     '''
     Devuelve la ruta relativa de un archivo con respecto a un directorio base
     '''
+    hash = exam.calculate_hash(file)
     relative_path = os.path.relpath(file, base_path)
-    return relative_path
+    return (relative_path,hash)
 
 
 '''
