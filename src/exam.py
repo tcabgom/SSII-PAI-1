@@ -6,25 +6,37 @@ import hashlib
 
 
 BUFFER_SIZE = 8192
-paths = "src/secured_files.txt"
+base_paths = "base_paths.json"
+rel_paths = "rel_paths.json"
 HASHES_PATH = "paths.json"
 
-def load_files(paths = paths):
+def load_files(base_paths_file="base_paths.json", rel_paths_file="rel_paths.json"):
     try:
-        with open(paths, 'r') as archivo:
-            paths = archivo.read().splitlines()
-        return paths
+        with open(base_paths_file, 'r') as f:
+            base_paths_dict = json.load(f)
+        with open(rel_paths_file, 'r') as f:
+            rel_paths_dict = json.load(f)
+
+        file_list = []
+
+        for key, relative_path in rel_paths_dict.items():
+            if key in base_paths_dict:
+                base_path = base_paths_dict[key]
+                print(base_path, "\n", relative_path)
+                for r in relative_path:
+                    joined_path = os.path.join(base_path, r)
+                    file_list.append(joined_path)
+
+        return file_list
+
     except FileNotFoundError:
-        print(f"Error: No se pudo encontrar el archivo '{paths}'.")
-        return []
-    except Exception as e:
-        print(f"Error inesperado: {e}")
+        print("One or both of the files not found.")
         return []
 
-class Hash_Type(Enum):
-    SHA256 = "SHA256"
-
-def calculate_hash(file, hash_function = Hash_Type.SHA256):
+def calculate_hash(file):
+    '''
+    Devuelve el hash de un archivo
+    '''
     # TODO Quizas deba admitir distintos tipos de funciones hash
     file_bytes = read_file(file)
     return hashlib.sha256(file_bytes).hexdigest()
@@ -46,13 +58,21 @@ def read_file(file):
     return file_bytes
 
 
-def load_hash_dictionary():
-    with open("hashes.json", "r") as f:
-        hash_dict = json.load(f)
-        return hash_dict["hashes"]
+def load_hash_dictionary(file_path="hashes.json"):
+    try:
+        with open(file_path, "r") as f:
+            hash_dict = json.load(f)
+            return hash_dict.get("hashes", {})
+    except FileNotFoundError:
+        with open(file_path, "w") as f:
+            json.dump({"hashes": {}}, f)
+        return {}
 
 
 def check_integrity():
+    '''
+    Examina la integridad de los archivos
+    '''
     integrity_dict = load_hash_dictionary()
     files = load_files()
     good_files = []
@@ -60,6 +80,7 @@ def check_integrity():
     new_files_tracked = []
     for file in files:
         hash = calculate_hash(file)
+        print(hash)
         if file in integrity_dict:
             if hash == integrity_dict[file]:
                 good_files.append(file)
@@ -71,7 +92,6 @@ def check_integrity():
             integrity_dict[file] = hash
     if len(new_files_tracked) != 0:
         integrity_update(integrity_dict)
-    return None
 
 def send_warning_message():
     # Mandar un correo al cliente de que hay un problema de integridad
@@ -81,3 +101,6 @@ def integrity_update(dict):
     with open(HASHES_PATH, 'w') as f:
         json.dump(dict, f, indent=2)
 
+if __name__ == '__main__':
+    for f in load_files():
+        print(f)

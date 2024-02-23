@@ -1,5 +1,5 @@
 import tkinter as tk
-import main, add_element
+import main, add_element, exam
 
 def application_screen():
     # Pantalla de la aplicación
@@ -17,7 +17,7 @@ def application_screen():
     test_text = tk.Label(window, text="Welcome", fg=color_text, bg=color_background)
     new_element_button = tk.Button(window, text="Add Element", bg=color_button, activebackground=color_button_pressed, command = add_element.add_new_file)
     log_file_button = tk.Button(window, text="Open Log File", bg=color_button, activebackground=color_button_pressed)
-    start_button = tk.Button(window, text="Start Exam", bg=color_button, activebackground=color_button_pressed, command=main.begin_exam)
+    start_button = tk.Button(window, text="Start Exam", bg=color_button, activebackground=color_button_pressed, command=exam.check_integrity)
     exit_button = tk.Button(window, text="Close Program", bg=color_button, activebackground=color_button_pressed, command=window.destroy)
 
     test_text.pack(pady=10)
