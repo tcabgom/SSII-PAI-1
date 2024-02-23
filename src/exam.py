@@ -1,9 +1,11 @@
+import datetime
 import tkinter as tk
 import glob
 import json
 import os
 import hashlib
 import time
+import add_element
 
 
 BUFFER_SIZE = 8192
@@ -71,22 +73,44 @@ def check_integrity():
     '''
     Examina la integridad de los archivos
     '''
+    start_time = time.time()
     files_dict = load_files_dict()
-    good_files = []
+    good_files = 0
     bad_files = []
+    deleted_files = []
     for file in files_dict.keys():
-        hash = calculate_hash(file)
-        if hash == files_dict[file]:
-            print("Good file")
-            good_files.append(file)
+        if os.path.exists(file):
+            hash = calculate_hash(file)
+            if hash == files_dict[file]:
+                good_files += 1
+            else:
+                bad_files.append(file)
+                send_warning_message()
         else:
-            print("Bad file")
-            bad_files.append(file)
-            send_warning_message()
+            deleted_files.append(file)
+
+    log_filename = f"logs/integrity_log_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
+
+    with open(log_filename, 'w') as log_file:
+
+        log_file.write("\n########### Summary ###########\n")
+        log_file.write(f"Total Good Files: {good_files}\n")
+        log_file.write(f"Total Bad Files: {len(bad_files)}\n")
+        log_file.write(f"Total Deleted Files: {len(deleted_files)}\n")
+        log_file.write(f"Time taken: {time.time() - start_time:.2f} seconds\n\n")
+        log_file.write("List of Bad Files:\n")
+        log_file.write("\n".join(bad_files) + "\n")
+        log_file.write("\nList of Deleted Files:\n")
+        log_file.write("\n".join(deleted_files) + "\n")
+
 
 def send_warning_message():
-    # Mandar un correo al cliente de que hay un problema de integridad
-    return None
+    destinatario = "alex.0002002@gmail.com"
+    servidor_smtp = 'smtp.gmail.com'
+    puerto_smtp = 587
+    remitente = 'tu_correo@gmail.com'
+    contraseña = 'tu_contraseña'
+    
 
 def integrity_update(dict):
     with open(HASHES_PATH, 'w') as f:

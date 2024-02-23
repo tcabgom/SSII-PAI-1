@@ -44,7 +44,6 @@ def add_filepath(file_path):
     else:
         rel_paths_dict = {}  
     rel_paths_dict[id] = [rel]
-    print(rel)
     
     with open(rel_paths, 'w', encoding='utf-8') as f:
         json.dump(rel_paths_dict, f)
@@ -89,7 +88,28 @@ def add_rel_path(directory_path, id):
             rel_paths_dict[id] = [p]
         else:
             rel_paths_dict[id].append(p)
-        print(p)
+
+    
+    with open(rel_paths, 'w', encoding='utf-8') as f:
+        json.dump(rel_paths_dict, f)
+
+def update_rel_paths():
+    if os.path.exists(base_paths):
+        with open(base_paths, 'r', encoding='utf-8') as file:
+            base_paths_dict = json.load(file)
+    else:
+        return
+    if os.path.exists(rel_paths):
+        with open(rel_paths, 'r', encoding='utf-8') as file:
+            rel_paths_dict = json.load(file)
+    else:
+        rel_paths_dict = {}
+    for base_path in base_paths_dict.values():
+        for p in obtain_path_files(base_path, id, base_path):
+            if id not in rel_paths_dict:
+                rel_paths_dict[id] = [p]
+            else:
+                rel_paths_dict[id].append(p)
     
     with open(rel_paths, 'w', encoding='utf-8') as f:
         json.dump(rel_paths_dict, f)
