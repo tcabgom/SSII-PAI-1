@@ -7,10 +7,6 @@ from tkinter import filedialog, messagebox
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
 
-def load_base_paths():
-    with open(base_paths, 'r', encoding='utf-8') as f:
-        pass
-    pass
 
 def add_new_dir():
     '''
@@ -99,20 +95,23 @@ def update_rel_paths():
             base_paths_dict = json.load(file)
     else:
         return
+
     if os.path.exists(rel_paths):
         with open(rel_paths, 'r', encoding='utf-8') as file:
             rel_paths_dict = json.load(file)
     else:
         rel_paths_dict = {}
-    for base_path in base_paths_dict.values():
-        for p in obtain_path_files(base_path, id, base_path):
-            if id not in rel_paths_dict:
-                rel_paths_dict[id] = [p]
-            else:
-                rel_paths_dict[id].append(p)
-    
+
+    for id, base_path in base_paths_dict.items():
+        paths = obtain_path_files(base_path, id, base_path)
+        
+        if id not in rel_paths_dict:
+            rel_paths_dict[id] = paths
+        else:
+            rel_paths_dict[id].extend(paths)
+
     with open(rel_paths, 'w', encoding='utf-8') as f:
-        json.dump(rel_paths_dict, f)
+        json.dump(rel_paths_dict, f, indent=2) 
 
 def obtain_path_files(path, id, base_path, visited_directories=None):
     '''
@@ -142,72 +141,3 @@ def get_relpath(file, base_path):
     return (relative_path,hash)
 
 
-'''
-
-def add_new_file():
-
-    directory_path = filedialog.askdirectory(title="Seleccionar directorio para verificar integridad")
-
-    if os.path.exists(rel_paths):
-        with open(rel_paths, 'r', encoding='utf-8') as file:
-            rel_paths_dict = json.load(file)
-    else:
-        rel_paths_dict = {}
-
-    if directory_path:
-        if not os.path.exists(base_paths):
-            with open(base_paths, 'w', encoding='utf-8') as create_file:
-                pass
-        with open(base_paths, 'r+', encoding='utf-8') as f:
-            f.write(directory_path + '\n')
-            id = len(f.readlines())
-            for p in obtain_path_files(directory_path, id, directory_path):
-                if id not in rel_paths_dict:
-                    rel_paths_dict[id] = [p]
-                else:
-                    rel_paths_dict[id].append(p)
-                print(p)
-        
-        with open(rel_paths, 'w', encoding='utf-8') as f:
-            json.dump(rel_paths_dict, f)
-
-
-
-
-
-            
-
-def add_path_and_subpaths_to_list(path, file_path):
-    paths = load_saved_paths(file_path)
-    if not paths:
-        paths = []
-    paths.extend(get_all_subpaths(path))
-
-    unique_paths = set(paths)  # Eliminar duplicados
-    unique_paths = list(unique_paths)  # Convertir de nuevo a lista
-
-    save_paths_to_file(unique_paths, file_path)
-
-def get_all_subpaths(path):
-    subpaths = []
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            subpaths.append(os.path.join(root, file).replace("\\", "/"))
-    return subpaths
-
-def save_paths_to_file(paths, file_path):
-    with open(file_path, 'w', encoding='utf-8') as f:
-        for path in paths:
-            f.write(path + '\n')
-
-def load_saved_paths(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return [line.strip() for line in f.readlines()]
-    except FileNotFoundError:
-        return []
-    except Exception as e:
-        messagebox.showerror("Error", f"Error al cargar el archivo {file_path}: {str(e)}")
-        return []
-
-'''

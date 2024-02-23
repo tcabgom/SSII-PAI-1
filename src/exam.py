@@ -1,4 +1,7 @@
 import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 import tkinter as tk
 import glob
 import json
@@ -89,7 +92,9 @@ def check_integrity():
         else:
             deleted_files.append(file)
 
-    log_filename = f"logs/integrity_log_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+    log_filename = f"logs/integrity_log_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.log"
 
     with open(log_filename, 'w') as log_file:
 
@@ -104,21 +109,26 @@ def check_integrity():
         log_file.write("\n".join(deleted_files) + "\n")
 
 
-def send_warning_message():
-    destinatario = "alex.0002002@gmail.com"
+def send_warning_message(destinatario, asunto, cuerpo):
     servidor_smtp = 'smtp.gmail.com'
     puerto_smtp = 587
     remitente = 'tu_correo@gmail.com'
     contraseña = 'tu_contraseña'
-    
 
-def integrity_update(dict):
-    with open(HASHES_PATH, 'w') as f:
-        json.dump(dict, f, indent=2)
+    mensaje = MIMEMultipart()
+    mensaje['From'] = remitente
+    mensaje['To'] = destinatario
+    mensaje['Subject'] = asunto
+
+    mensaje.attach(MIMEText(cuerpo, 'plain'))
+    servidor = smtplib.SMTP(servidor_smtp, puerto_smtp)
+    servidor.starttls()
+    servidor.login(remitente, contraseña)
+    servidor.sendmail(remitente, destinatario, mensaje.as_string())
+    servidor.quit()
 
 
 
-'''
 def send_warning_message(receiver_email):
     
     # Configuración de la API de SendGrid
@@ -139,4 +149,4 @@ def send_warning_message(receiver_email):
         print(f"Error al enviar el correo electrónico: {e}")
 
     print("¡Advertencia! Se detectó un problema de integridad.")
-'''
+
