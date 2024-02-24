@@ -1,14 +1,12 @@
-import datetime
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
-import tkinter as tk
-import glob
 import json
 import os
 import hashlib
 import time
-import add_element
+from notification import mostrar_notificacion
 
 
 BUFFER_SIZE = 8192
@@ -76,6 +74,9 @@ def check_integrity():
     '''
     Examina la integridad de los archivos
     '''
+    
+    mostrar_notificacion("Realizando chequeo de integridad", f"Realizando chequeo de integridad el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+    
     start_time = time.time()
     files_dict = load_files_dict()
     good_files = 0
@@ -88,26 +89,60 @@ def check_integrity():
                 good_files += 1
             else:
                 bad_files.append(file)
-                send_warning_message()
+                #send_warning_message()
         else:
             deleted_files.append(file)
 
     if not os.path.exists("logs"):
         os.makedirs("logs")
-    log_filename = f"logs/integrity_log_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.log"
+    log_filename = f"logs/integrity_log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
 
     with open(log_filename, 'w') as log_file:
 
         log_file.write("\n########### Summary ###########\n")
-        log_file.write(f"Total Good Files: {good_files}\n")
-        log_file.write(f"Total Bad Files: {len(bad_files)}\n")
-        log_file.write(f"Total Deleted Files: {len(deleted_files)}\n")
-        log_file.write(f"Time taken: {time.time() - start_time:.2f} seconds\n\n")
-        log_file.write("List of Bad Files:\n")
+        log_file.write(f"Archivos integros: {good_files}\n")
+        log_file.write(f"Archivos modificados: {len(bad_files)}\n")
+        log_file.write(f"Archivos borrados: {len(deleted_files)}\n")
+        log_file.write(f"Tiempo: {time.time() - start_time:.2f} segundos\n\n")
+        log_file.write("Lista de archivos modificados:\n")
         log_file.write("\n".join(bad_files) + "\n")
-        log_file.write("\nList of Deleted Files:\n")
+        log_file.write("\nLista de archivos borrados:\n")
         log_file.write("\n".join(deleted_files) + "\n")
+        
+    mostrar_notificacion("Chequeo de integridad finalizado", 
+                                             f"Chequeo de integridad realizado el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n"
+                                             f"Información guardada dentro de la carpeta de esta aplicación en {log_filename}")
 
+def generar_informe():
+    # Recopilar todos los archivos de logs en la carpeta "logs"
+    archivos_logs = [archivo for archivo in os.listdir("logs") if archivo.startswith("integrity_log")]
+
+    # Crear una carpeta para almacenar los logs probados
+    if not os.path.exists("logs_procesados"):
+        os.makedirs("logs_procesados")
+
+    # Mover los archivos de logs a la carpeta de logs probados
+    for archivo_log in archivos_logs:
+        ruta_origen = os.path.join("logs", archivo_log)
+        ruta_destino = os.path.join("logs_procesados", archivo_log)
+        os.rename(ruta_origen, ruta_destino)
+
+    # Procesar los archivos de logs
+    contenido_logs = []
+    for archivo_log in archivos_logs:
+        with open(os.path.join("logs_procesados", archivo_log), 'r') as log_file:
+            contenido_logs.append(log_file.read())
+
+    # Crear un informe combinando todos los logs
+    if not os.path.exists("informes"):
+        os.makedirs("informes")
+    informe_filename = f"informes/informe_{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
+    with open(informe_filename, 'w') as informe_file:
+        informe_file.write("\n\n".join(contenido_logs))
+
+
+    # Mostrar una notificación indicando la generación del informe
+    mostrar_notificacion("Generación de informe", f"Se ha generado un informe con los logs acumulados: {informe_filename}")
 
 def send_warning_message(destinatario, asunto, cuerpo):
     servidor_smtp = 'smtp.gmail.com'
@@ -124,7 +159,7 @@ def send_warning_message(destinatario, asunto, cuerpo):
     servidor = smtplib.SMTP(servidor_smtp, puerto_smtp)
     servidor.starttls()
     servidor.login(remitente, contraseña)
-    servidor.sendmail(remitente, destinatario, mensaje.as_string())
+    #servidor.sendmail(remitente, destinatario, mensaje.as_string())
     servidor.quit()
 
 

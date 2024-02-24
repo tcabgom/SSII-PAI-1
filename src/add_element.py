@@ -20,6 +20,8 @@ def add_new_dir():
             messagebox.showerror("Error", "El directorio seleccionado ya se encuentra en la lista")
             return
         add_rel_path(directory_path, id)
+        
+    print(f"Añadido directorio {directory_path} correctamente ")
 
 def add_new_file():
     file_path = filedialog.askopenfilename(title="Seleccionar archivo para verificar integridad")
@@ -29,6 +31,8 @@ def add_new_file():
             messagebox.showerror("Error", "El archivo seleccionado ya se encuentra en la lista")
             return
         
+    print(f"Añadido archivo {file_path} correctamente")
+    
 def add_filepath(file_path):
     base, rel = split_string_in_half(file_path) 
     id, duplicated = add_base_path(base)
@@ -39,7 +43,9 @@ def add_filepath(file_path):
             rel_paths_dict = json.load(file)
     else:
         rel_paths_dict = {}  
-    rel_paths_dict[id] = [rel]
+    
+    rel_path = get_relpath(file_path, base)
+    rel_paths_dict[id] = [rel_path]
     
     with open(rel_paths, 'w', encoding='utf-8') as f:
         json.dump(rel_paths_dict, f)
