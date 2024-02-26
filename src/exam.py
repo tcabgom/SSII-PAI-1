@@ -1,8 +1,5 @@
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import shutil
-import smtplib
 import json
 import os
 import hashlib
