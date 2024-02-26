@@ -5,6 +5,8 @@ import shutil
 import exam
 from tkinter import filedialog, messagebox
 
+from notification import mostrar_notificacion
+
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
 recovery_directory = "/recovery"
@@ -87,6 +89,7 @@ def add_rel_path(directory_path, id):
             rel_paths_dict = json.load(file)
     else:
         rel_paths_dict = {}
+        mostrar_notificacion("Fichero de rutas relativas no encontrado", "No se ha encontrado el fichero de rutas relativas. Se creará uno nuevo. Por favor, compruebe que no se debe a una brecha de seguridad.")
     for p in obtain_path_files(directory_path, id, directory_path):
         if id not in rel_paths_dict:
             rel_paths_dict[id] = [p]
@@ -109,6 +112,7 @@ def update_rel_paths():
             rel_paths_dict = json.load(file)
     else:
         rel_paths_dict = {}
+        mostrar_notificacion("Fichero de rutas relativas no encontrado", "No se ha encontrado el fichero de rutas relativas. Se creará uno nuevo. Por favor, compruebe que no se debe a una brecha de seguridad.")
 
     for id, base_path in base_paths_dict.items():
         paths = obtain_path_files(base_path, id, base_path)
