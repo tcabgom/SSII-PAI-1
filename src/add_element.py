@@ -1,11 +1,13 @@
 import glob
 import json
 import os
+import shutil
 import exam
 from tkinter import filedialog, messagebox
 
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
+recovery_directory = "/recovery"
 
 
 def add_new_dir():
@@ -128,10 +130,14 @@ def obtain_path_files(path, id, base_path, visited_directories=None):
 
     path = os.path.join(path, "**")
     files = set()
-
+    if not os.path.exists(recovery_directory):
+        os.makedirs(recovery_directory)
     for file in glob.glob(path, recursive=True):
         if os.path.isfile(file):
-            files.add(get_relpath(file, base_path))
+            rel_path = get_relpath(file, base_path)
+            hash_value = rel_path[1]  
+            copy_to_recovery_directory(file, hash_value)
+            files.add(rel_path)
         elif os.path.isdir(file) and file not in visited_directories:
             visited_directories.add(file)
             files.update(obtain_path_files(file, id, base_path, visited_directories))
@@ -146,4 +152,15 @@ def get_relpath(file, base_path):
     relative_path = os.path.relpath(file, base_path)
     return (relative_path,hash)
 
+def copy_to_recovery_directory(file, hash_value):
+    """
+    Copia el archivo al directorio de recuperación con el nombre del hash.
+    """
+    recovery_path = os.path.join(recovery_directory, hash_value)
+
+    try:
+        shutil.copy2(file, recovery_path)
+        print("Archivo copiado correctamente al directorio de recuperación")
+    except Exception as e:
+        print(f"Error al copiar el archivo: {e}")
 

@@ -1,6 +1,7 @@
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import shutil
 import smtplib
 import json
 import os
@@ -12,7 +13,7 @@ from notification import mostrar_notificacion
 BUFFER_SIZE = 8192
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
-HASHES_PATH = "paths.json"
+recovery_directory = "/recovery"
 
 def load_files_dict(base_paths_file="base_paths.json", rel_paths_file="rel_paths.json"):
     try:
@@ -82,6 +83,7 @@ def check_integrity():
     good_files = 0
     bad_files = []
     deleted_files = []
+    restored_files = []
     for file in files_dict.keys():
         if os.path.exists(file):
             hash = calculate_hash(file)
@@ -89,29 +91,46 @@ def check_integrity():
                 good_files += 1
             else:
                 bad_files.append(file)
-                #send_warning_message()
+                restored_file = restore_from_recovery(file, files_dict[file])
+                if restored_file:
+                    restored_files.append(restored_file)
+                    print(f"Restaurado el archivo {restored_file} desde el directorio de recuperación.")
         else:
             deleted_files.append(file)
 
+    create_integrity_log(good_files, bad_files, deleted_files, restored_files, start_time)
+        
+
+
+
+def create_integrity_log(good_files, bad_files, deleted_files, restored_files, start_time):
+    '''
+    Crea un archivo de log con el resultado del chequeo de integridad y muestra una notificación.
+    '''
     if not os.path.exists("logs"):
         os.makedirs("logs")
     log_filename = f"logs/integrity_log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
 
     with open(log_filename, 'w') as log_file:
-
         log_file.write("\n########### Summary ###########\n")
         log_file.write(f"Archivos integros: {good_files}\n")
         log_file.write(f"Archivos modificados: {len(bad_files)}\n")
         log_file.write(f"Archivos borrados: {len(deleted_files)}\n")
+        log_file.write(f"Archivos restaurados: {len(restored_files)}\n")
         log_file.write(f"Tiempo: {time.time() - start_time:.2f} segundos\n\n")
         log_file.write("Lista de archivos modificados:\n")
         log_file.write("\n".join(bad_files) + "\n")
         log_file.write("\nLista de archivos borrados:\n")
         log_file.write("\n".join(deleted_files) + "\n")
-        
-    mostrar_notificacion("Chequeo de integridad finalizado", 
-                                             f"Chequeo de integridad realizado el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n"
-                                             f"Información guardada dentro de la carpeta de esta aplicación en {log_filename}")
+        log_file.write("\nLista de archivos restaurados:\n")
+        log_file.write("\n".join(restored_files) + "\n")
+
+    log_notification_message = (f"Chequeo de integridad realizado el {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                                f"Información guardada dentro de la carpeta de esta aplicación en {log_filename}")
+    mostrar_notificacion("Chequeo de integridad finalizado", log_notification_message)
+
+
+
 
 def generar_informe():
     # Recopilar todos los archivos de logs en la carpeta "logs"
@@ -144,44 +163,19 @@ def generar_informe():
     # Mostrar una notificación indicando la generación del informe
     mostrar_notificacion("Generación de informe", f"Se ha generado un informe con los logs acumulados: {informe_filename}")
 
-def send_warning_message(destinatario, asunto, cuerpo):
-    servidor_smtp = 'smtp.gmail.com'
-    puerto_smtp = 587
-    remitente = 'tu_correo@gmail.com'
-    contraseña = 'tu_contraseña'
-
-    mensaje = MIMEMultipart()
-    mensaje['From'] = remitente
-    mensaje['To'] = destinatario
-    mensaje['Subject'] = asunto
-
-    mensaje.attach(MIMEText(cuerpo, 'plain'))
-    servidor = smtplib.SMTP(servidor_smtp, puerto_smtp)
-    servidor.starttls()
-    servidor.login(remitente, contraseña)
-    #servidor.sendmail(remitente, destinatario, mensaje.as_string())
-    servidor.quit()
-
-
-
-def send_warning_message(receiver_email):
+def restore_from_recovery(file, original_hash):
+    """
+    Restaura el archivo desde el directorio de recuperación si es posible.
+    Retorna la ruta del archivo restaurado o None si no se pudo restaurar.
+    """
+    recovery_path = os.path.join(recovery_directory, original_hash)
     
-    # Configuración de la API de SendGrid
-    sg_api_key = 'tu_clave_de_api'  # Reemplaza con tu clave de API de SendGrid
-
-    message = Mail(
-        from_email='tu_correo_electronico',  # Reemplaza con tu dirección de correo
-        to_emails=receiver_email,
-        subject='Advertencia: Problema de Integridad',
-        plain_text_content='¡Advertencia! Se detectó un problema de integridad en el sistema.'
-    )
-
     try:
-        sg = SendGridAPIClient(sg_api_key)
-        response = sg.send(message)
-        print(f"Correo electrónico de advertencia enviado con éxito. Código de respuesta: {response.status_code}")
+        shutil.copy2(recovery_path, file)
+        return file
     except Exception as e:
-        print(f"Error al enviar el correo electrónico: {e}")
+        print(f"Error al restaurar el archivo desde el directorio de recuperación: {e}")
+        return None
 
-    print("¡Advertencia! Se detectó un problema de integridad.")
+
 
