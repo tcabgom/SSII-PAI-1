@@ -9,8 +9,7 @@ from notification import mostrar_notificacion
 
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
-recovery_directory = "/recovery"
-
+recovery_directory = "recovery"
 
 def add_new_dir():
     '''
@@ -134,14 +133,17 @@ def obtain_path_files(path, id, base_path, visited_directories=None):
 
     path = os.path.join(path, "**")
     files = set()
-    if not os.path.exists(recovery_directory):
-        os.makedirs(recovery_directory)
+
     for file in glob.glob(path, recursive=True):
         if os.path.isfile(file):
             rel_path = get_relpath(file, base_path)
-            hash_value = rel_path[1]  
-            copy_to_recovery_directory(file, hash_value)
-            files.add(rel_path)
+            hash_value = rel_path[1]  # Obtén el hash de la tupla rel_path
+
+            # Comprobar si el archivo ya existe en el directorio de recuperación
+            recovery_path = os.path.join(recovery_directory, hash_value)
+            if not os.path.exists(recovery_path):
+                copy_to_recovery_directory(file, hash_value)
+                files.add(get_relpath(file, base_path))
         elif os.path.isdir(file) and file not in visited_directories:
             visited_directories.add(file)
             files.update(obtain_path_files(file, id, base_path, visited_directories))
@@ -159,12 +161,15 @@ def get_relpath(file, base_path):
 def copy_to_recovery_directory(file, hash_value):
     """
     Copia el archivo al directorio de recuperación con el nombre del hash.
+    Crea el directorio de recuperación si no existe.
     """
+    if not os.path.exists(recovery_directory):
+        os.makedirs(recovery_directory)
+
     recovery_path = os.path.join(recovery_directory, hash_value)
 
     try:
         shutil.copy2(file, recovery_path)
-        print("Archivo copiado correctamente al directorio de recuperación")
+        print(f"Archivo copiado a {recovery_path} correctamente")
     except Exception as e:
-        print(f"Error al copiar el archivo: {e}")
-
+        print(f"Error al copiar el archivo a {recovery_path}: {e}")

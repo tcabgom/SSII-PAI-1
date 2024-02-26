@@ -13,7 +13,8 @@ from notification import mostrar_notificacion
 BUFFER_SIZE = 8192
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
-recovery_directory = "/recovery"
+recovery_directory = "recovery"
+deleted_files_directory = "deleted_files"
 
 def load_files_dict(base_paths_file="base_paths.json", rel_paths_file="rel_paths.json"):
     try:
@@ -91,10 +92,14 @@ def check_integrity():
                 good_files += 1
             else:
                 bad_files.append(file)
+                deleted_file_copy = copy_to_deleted_files(file)
+                if deleted_file_copy:
+                    deleted_files.append(deleted_file_copy)
+                    
                 restored_file = restore_from_recovery(file, files_dict[file])
                 if restored_file:
                     restored_files.append(restored_file)
-                    print(f"Restaurado el archivo {restored_file} desde el directorio de recuperación.")
+                    
         else:
             deleted_files.append(file)
 
@@ -178,4 +183,13 @@ def restore_from_recovery(file, original_hash):
         return None
 
 
+def copy_to_deleted_files(file, deleted_files_directory):
+    """
+    Copia el archivo al directorio de archivos eliminados.
+    """
+    if not os.path.exists(deleted_files_directory):
+        os.makedirs(deleted_files_directory)
 
+    deleted_file_copy = os.path.join(deleted_files_directory, os.path.basename(file))
+    shutil.copy2(file, deleted_file_copy)
+    print(f"Copiado el archivo original a {deleted_file_copy}")
