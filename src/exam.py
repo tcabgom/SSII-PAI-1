@@ -74,7 +74,7 @@ def check_integrity():
     Examina la integridad de los archivos
     '''
     
-    mostrar_notificacion("Realizando chequeo de integridad", f"Realizando chequeo de integridad el {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+    mostrar_notificacion("Realizando chequeo de integridad", f"Realizando chequeo de integridad el {datetime.now().strftime('%Y%m%d%H%M%S')}")
     
     start_time = time.time()
     files_dict = load_files_dict()
@@ -133,7 +133,6 @@ def create_integrity_log(good_files, bad_files, deleted_files, restored_files, s
 
 
 
-
 def generar_informe():
     # Recopilar todos los archivos de logs en la carpeta "logs"
     archivos_logs = [archivo for archivo in os.listdir("logs") if archivo.startswith("integrity_log")]
@@ -150,20 +149,41 @@ def generar_informe():
 
     # Procesar los archivos de logs
     contenido_logs = []
+    archivos_alterados_logs = []
+
     for archivo_log in archivos_logs:
         with open(os.path.join("logs_procesados", archivo_log), 'r') as log_file:
-            contenido_logs.append(log_file.read())
+            contenido_log = log_file.read()
+            contenido_logs.append(contenido_log)
+
+            # Verificar si el log contiene archivos alterados
+            if f"Archivos modificados: 0" not in contenido_log:
+                archivos_alterados_logs.append(archivo_log)
+
+    # Calcular el porcentaje de archivos alterados
+    total_archivos_logs = len(archivos_logs)
+    total_archivos_alterados_logs = len(archivos_alterados_logs)
+    porcentaje_archivos_alterados = (total_archivos_alterados_logs / total_archivos_logs) * 100 if total_archivos_logs > 0 else 0
 
     # Crear un informe combinando todos los logs
     if not os.path.exists("informes"):
         os.makedirs("informes")
+
     informe_filename = f"informes/informe_{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
     with open(informe_filename, 'w') as informe_file:
-        informe_file.write("\n\n".join(contenido_logs))
+        # Agregar porcentaje de archivos alterados al principio del informe
+        informe_file.write(f"Porcentaje de archivos alterados en todos los logs: {porcentaje_archivos_alterados:.2f}%\n\n")
 
+        # Agregar lista de archivos logs que contienen archivos alterados
+        informe_file.write("Archivos logs que contienen archivos alterados:\n")
+        informe_file.write("\n".join(archivos_alterados_logs) + "\n\n")
+
+        # Agregar contenido de todos los logs
+        informe_file.write("\n\n".join(contenido_logs))
 
     # Mostrar una notificación indicando la generación del informe
     mostrar_notificacion("Generación de informe", f"Se ha generado un informe con los logs acumulados: {informe_filename}")
+
 
 def restore_from_recovery(file, original_hash):
     """
