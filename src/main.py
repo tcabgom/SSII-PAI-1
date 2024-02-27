@@ -21,7 +21,7 @@ def application_screen():
     style.map("TButton", background=[('pressed', color_button_pressed)])
 
     # Etiqueta de bienvenida
-    test_text = tk.Label(window, text="Welcome", fg=color_text, bg=color_background, font=('Helvetica', 18, 'bold'))
+    test_text = tk.Label(window, text="Sistema de Detección de Intrusos", fg=color_text, bg=color_background, font=('Helvetica', 18, 'bold'))
     test_text.pack(pady=10)
 
     # Botones con estilo mejorado

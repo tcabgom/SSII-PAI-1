@@ -7,7 +7,7 @@ import time
 from notification import mostrar_notificacion
 
 
-BUFFER_SIZE = 8192
+BUFFER_SIZE = 65536
 base_paths = "base_paths.json"
 rel_paths = "rel_paths.json"
 recovery_directory = "recovery"
@@ -35,13 +35,16 @@ def load_files_dict(base_paths_file="base_paths.json", rel_paths_file="rel_paths
         print("One or both of the files not found.")
         return []
 
+
 def calculate_hash(file):
     '''
-    Devuelve el hash de un archivo
+    Devuelve el hash de un archivo incluyendo metadatos como la fecha de modificacion
     '''
     file_bytes = read_file(file)
-    return hashlib.sha256(file_bytes).hexdigest()
-
+    file_stats = os.stat(file)
+    metadata_str = f"{file_stats.st_mtime}-{file_stats.st_size}"
+    combined_data = file_bytes + metadata_str.encode('utf-8')
+    return hashlib.sha256(combined_data).hexdigest()
 
 def read_file(file):
     '''
@@ -56,7 +59,6 @@ def read_file(file):
             file_bytes += file_content
 
     return file_bytes
-
 
 def load_hash_dictionary(file_path="hashes.json"):
     try:
