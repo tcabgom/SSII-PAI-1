@@ -91,7 +91,7 @@ def check_integrity():
                 good_files += 1
             else:
                 bad_files.append(file)
-                deleted_file_copy = copy_to_deleted_files(file)
+                deleted_file_copy = copy_to_deleted_files(file, deleted_files_directory)
                 if deleted_file_copy:
                     deleted_files.append(deleted_file_copy)
                     
