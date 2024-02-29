@@ -100,6 +100,9 @@ def check_integrity():
                     restored_files.append(restored_file)
                     
         else:
+            restored_file = restore_from_recovery(file, files_dict[file])
+            if restored_file:
+                restored_files.append(restored_file)
             deleted_files.append(file)
 
     create_integrity_log(good_files, bad_files, deleted_files, restored_files, start_time)
