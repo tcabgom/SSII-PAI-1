@@ -16,12 +16,12 @@ def read_time_between_tests():
                     informe = int(line.split('=')[1].strip())
             
             if tiempo is None or informe is None:
-                return (5, 2)
+                return (86400, 30)
             
             return (tiempo, informe)
         
     except FileNotFoundError:
-        return (5, 2)
+        return (86400, 30)
 
 def schedule_integrity_check():
 
